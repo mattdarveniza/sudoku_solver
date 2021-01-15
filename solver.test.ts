@@ -2,6 +2,7 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.83.0/testing/asserts.ts";
+import { printPuzzle } from "./printPuzzle.ts";
 import { puzzle1 } from "./puzzles.ts";
 import {
   getSquareIndex,
@@ -12,6 +13,7 @@ import {
   reverseRowIndex,
   reverseColumnIndex,
   reverseSquareIndex,
+  hiddenSingles,
 } from "./solver.ts";
 
 Deno.test("getSquareIndex", () => {
@@ -90,4 +92,31 @@ Deno.test("basicPossibilties", () => {
   assertEquals(result[0], [2, 5, 7, 8, 9]);
   assertEquals(result[80], [1, 3, 6, 8]);
   assertEquals(result[9], []);
+});
+
+Deno.test("hiddenSingles row", () => {
+  // prettier-ignore
+  const puzzle = [
+    2, 1, 3, 4, 0, 6, 7, 8, 9,
+    ...Array(9 * 8).fill(0),
+  ]
+
+  const result = hiddenSingles(puzzle);
+  assert(result);
+  assertEquals(result[4], 5);
+});
+
+Deno.test("hiddenSingles square", () => {
+  // prettier-ignore
+  const puzzle = [
+    0, 2, 3, ...Array(6).fill(0),
+    4, 5, 6, ...Array(6).fill(0),
+    7, 8, 1, ...Array(6).fill(0),
+    ...Array(9 * 6).fill(0)
+  ]
+
+  const result = hiddenSingles(puzzle);
+  assert(result);
+  printPuzzle(result);
+  assertEquals(result[0], 9);
 });

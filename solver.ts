@@ -94,47 +94,111 @@ export function basicPossibilities(puzzle: Puzzle): Possibilities {
   return possibilities;
 }
 
+export function nakedSingles(puzzle: Puzzle) {
+  let incremented = false;
+  let possibilities = basicPossibilities(puzzle);
+
+  const result = puzzle.map((v, i) => {
+    if (v === 0 && possibilities[i].length === 1) {
+      incremented = true;
+      return possibilities[i][0];
+    }
+    return v;
+  });
+
+  return incremented ? result : null;
+}
+
+export function hiddenSingles(puzzle: Puzzle) {
+  const result = [...puzzle];
+  let incremented = false;
+  let possibilities = basicPossibilities(puzzle);
+
+  const pRows = getRows(possibilities);
+  const pColumns = getColumns(possibilities);
+  const pSquares = getSquares(possibilities);
+  const getIndex = [
+    reverseRowIndex,
+    reverseColumnIndex,
+    reverseSquareIndex,
+  ] as const;
+
+  [pRows, pColumns, pSquares].forEach((pGroups, pGroupsIndex) => {
+    pGroups.forEach((group, groupIndex) => {
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((i) => {
+        const iInstances = group.filter((g) => g.includes(i));
+
+        if (iInstances.length === 1) {
+          const valueIndex = group.findIndex((g) => g.includes(i));
+          result[getIndex[pGroupsIndex](groupIndex, valueIndex)] = i;
+          incremented = true;
+        }
+      });
+    });
+  });
+
+  return incremented ? result : null;
+}
+
+export function hiddenPairs(puzzle: Puzzle) {
+  const result = [...puzzle];
+  let incremented = false;
+  const possibilities = basicPossibilities(puzzle);
+}
+
+export function checkResult(puzzle: Puzzle) {
+  return [getRows(puzzle), getColumns(puzzle), getSquares(puzzle)]
+    .flat()
+    .every((group) =>
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].every((i) => group.includes(i))
+    );
+}
+
+export function checkPartialResult(puzzle: Puzzle) {
+  return [getRows(puzzle), getColumns(puzzle), getSquares(puzzle)]
+    .flat()
+    .every((group) =>
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].every(
+        (i) => group.filter((v) => v === i).length <= 1
+      )
+    );
+}
+
 export function solve(puzzle: Puzzle) {
   let solved = false;
+  let iterations = 0;
+
+  if (!checkPartialResult(puzzle)) {
+    console.log("Invalid puzzle, no feasible solution");
+    printPuzzle(puzzle);
+    return;
+  }
 
   while (!solved) {
     let incremented = false;
-    let possibilities = basicPossibilities(puzzle);
+
     // Find naked singles
-    puzzle = puzzle.map((v, i) => {
-      if (v === 0 && possibilities[i].length === 1) {
-        incremented = true;
-        return possibilities[i][0];
-      }
-      return v;
-    });
+    const nsResult = nakedSingles(puzzle);
+    if (nsResult) {
+      puzzle = nsResult;
+      incremented = true;
+    }
 
     // Find hidden singles
-    if (incremented) {
-      possibilities = basicPossibilities(puzzle);
+    const hsResult = hiddenSingles(puzzle);
+    if (hsResult) {
+      puzzle = hsResult;
+      incremented = true;
     }
-    const pRows = getRows(possibilities);
-    const pColumns = getColumns(possibilities);
-    const pSquares = getSquares(possibilities);
-    const getIndex = [
-      reverseRowIndex,
-      reverseColumnIndex,
-      reverseSquareIndex,
-    ] as const;
 
-    [pRows, pColumns, pSquares].forEach((pGroups, pGroupsIndex) => {
-      pGroups.forEach((group, groupIndex) => {
-        [1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((i) => {
-          const iInstances = group.filter((g) => g.includes(i));
+    // Find naked pairs
 
-          if (iInstances.length === 1) {
-            const valueIndex = group.findIndex((g) => g.includes(i));
-            puzzle[getIndex[pGroupsIndex](groupIndex, valueIndex)] = i;
-            incremented = true;
-          }
-        });
-      });
-    });
+    // console.log("\niterations:", ++iterations);
+    // printPuzzle(puzzle);
+    if (!checkPartialResult(puzzle)) {
+      console.log("\nPuzzle invalidated");
+      return;
+    }
 
     if (!incremented) {
       console.log("Puzzle not solved :(");
@@ -145,7 +209,11 @@ export function solve(puzzle: Puzzle) {
   }
 
   if (solved) {
-    console.log("Puzzle solved!");
+    if (checkResult(puzzle)) {
+      console.log("Puzzle solved!");
+    } else {
+      console.log("Result invalid :(");
+    }
   }
   printPuzzle(puzzle);
 }
