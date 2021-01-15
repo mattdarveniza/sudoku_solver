@@ -140,10 +140,28 @@ export function hiddenSingles(puzzle: Puzzle) {
   return incremented ? result : null;
 }
 
-export function hiddenPairs(puzzle: Puzzle) {
+export function nakedPairs(puzzle: Puzzle) {
   const result = [...puzzle];
   let incremented = false;
-  const possibilities = basicPossibilities(puzzle);
+  let possibilities = basicPossibilities(puzzle);
+
+  const pRows = getRows(possibilities);
+  const pColumns = getColumns(possibilities);
+  const pSquares = getSquares(possibilities);
+
+  [pRows, pColumns, pSquares].forEach((pGroups, pGroupsIndex) => {
+    pGroups.forEach((group, groupIndex) => {
+      // Find pairs
+      const pairs = group
+        .filter((g) => g.length === 2)
+        .filter((g1) =>
+          group.find((g2) => g2.length === 2 && g2.every((v) => g1.includes(v)))
+        );
+      if (pairs.length > 0) {
+        incremented = true;
+      }
+    });
+  });
 }
 
 export function checkResult(puzzle: Puzzle) {
